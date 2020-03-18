@@ -1584,6 +1584,7 @@ var Resource = {
     /*#__PURE__*/
     _regeneratorRuntime.mark(function _callee(url, preparedResponse, parsedUrl) {
       var headers,
+          encode,
           result,
           validResponse,
           _args = arguments;
@@ -1592,9 +1593,10 @@ var Resource = {
           switch (_context.prev = _context.next) {
             case 0:
               headers = _args.length > 3 && _args[3] !== undefined ? _args[3] : {};
+              encode = _args.length > 4 && _args[4] !== undefined ? _args[4] : false;
 
               if (!preparedResponse) {
-                _context.next = 6;
+                _context.next = 7;
                 break;
               }
 
@@ -1610,29 +1612,29 @@ var Resource = {
                 body: preparedResponse,
                 response: validResponse
               };
-              _context.next = 9;
+              _context.next = 10;
               break;
 
-            case 6:
-              _context.next = 8;
+            case 7:
+              _context.next = 9;
               return fetchResource(url, parsedUrl, headers);
 
-            case 8:
+            case 9:
               result = _context.sent;
 
-            case 9:
+            case 10:
               if (!result.error) {
-                _context.next = 12;
+                _context.next = 13;
                 break;
               }
 
               result.failed = true;
               return _context.abrupt("return", result);
 
-            case 12:
-              return _context.abrupt("return", this.generateDoc(result));
-
             case 13:
+              return _context.abrupt("return", this.generateDoc(result, encode));
+
+            case 14:
             case "end":
               return _context.stop();
           }
@@ -1649,6 +1651,7 @@ var Resource = {
   generateDoc: function generateDoc(_ref) {
     var content = _ref.body,
         response = _ref.response;
+    var encode = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
     var _response$headers$con = response.headers['content-type'],
         contentType = _response$headers$con === void 0 ? '' : _response$headers$con; // TODO: Implement is_text function from
     // https://github.com/ReadabilityHoldings/readability/blob/8dc89613241d04741ebd42fa9fa7df1b1d746303/readability/utils/text.py#L57
@@ -1657,10 +1660,18 @@ var Resource = {
       throw new Error('Content does not appear to be text.');
     }
 
-    var $ = this.encodeDoc({
-      content: content,
-      contentType: contentType
-    });
+    var $;
+
+    if (encode) {
+      $ = this.encodeDoc({
+        content: content,
+        contentType: contentType
+      });
+    } else {
+      $ = cheerio.load(content, {
+        decodeEntities: false
+      });
+    }
 
     if ($.root().children().length === 0) {
       throw new Error('No children, likely a bad parse.');
@@ -1888,13 +1899,13 @@ var TwitterExtractor = {
 var NYTimesExtractor = {
   domain: 'www.nytimes.com',
   title: {
-    selectors: ['h1.g-headline', 'h1[itemprop="headline"]', 'h1.headline']
+    selectors: ['h1.g-headline', 'h1[itemprop="headline"]', 'h1.headline', 'h1 .balancedHeadline']
   },
   author: {
-    selectors: [['meta[name="author"]', 'value'], '.g-byline', '.byline']
+    selectors: [['meta[name="author"]', 'value'], '.g-byline', '.byline', ['meta[name="byl"]', 'value']]
   },
   content: {
-    selectors: ['div.g-blocks', 'article#story'],
+    selectors: ['div.g-blocks', 'section[name="articleBody"]', 'article#story'],
     transforms: {
       'img.g-lazy': function imgGLazy($node) {
         var src = $node.attr('src');
@@ -7609,6 +7620,8 @@ var Mercury = {
           headers,
           extend,
           customExtractor,
+          _opts$encode,
+          encode,
           parsedUrl,
           $,
           Extractor,
@@ -7626,7 +7639,7 @@ var Mercury = {
           switch (_context.prev = _context.next) {
             case 0:
               _ref = _args.length > 1 && _args[1] !== undefined ? _args[1] : {}, html = _ref.html, opts = _objectWithoutProperties(_ref, ["html"]);
-              _opts$fetchAllPages = opts.fetchAllPages, fetchAllPages = _opts$fetchAllPages === void 0 ? true : _opts$fetchAllPages, _opts$fallback = opts.fallback, fallback = _opts$fallback === void 0 ? true : _opts$fallback, _opts$contentType = opts.contentType, contentType = _opts$contentType === void 0 ? 'html' : _opts$contentType, _opts$headers = opts.headers, headers = _opts$headers === void 0 ? {} : _opts$headers, extend = opts.extend, customExtractor = opts.customExtractor; // if no url was passed and this is the browser version,
+              _opts$fetchAllPages = opts.fetchAllPages, fetchAllPages = _opts$fetchAllPages === void 0 ? true : _opts$fetchAllPages, _opts$fallback = opts.fallback, fallback = _opts$fallback === void 0 ? true : _opts$fallback, _opts$contentType = opts.contentType, contentType = _opts$contentType === void 0 ? 'html' : _opts$contentType, _opts$headers = opts.headers, headers = _opts$headers === void 0 ? {} : _opts$headers, extend = opts.extend, customExtractor = opts.customExtractor, _opts$encode = opts.encode, encode = _opts$encode === void 0 ? false : _opts$encode; // if no url was passed and this is the browser version,
               // set url to window.location.href and load the html
               // from the current page
 
@@ -7650,7 +7663,7 @@ var Mercury = {
 
             case 6:
               _context.next = 8;
-              return Resource.create(url, html, parsedUrl, headers);
+              return Resource.create(url, html, parsedUrl, headers, encode);
 
             case 8:
               $ = _context.sent;

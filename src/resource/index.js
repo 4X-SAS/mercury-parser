@@ -13,7 +13,7 @@ const Resource = {
   //                  attempting to fetch it ourselves. Expects a
   //                  string.
   // :param headers: Custom headers to be included in the request
-  async create(url, preparedResponse, parsedUrl, headers = {}) {
+  async create(url, preparedResponse, parsedUrl, headers = {}, encode = false) {
     let result;
 
     if (preparedResponse) {
@@ -36,10 +36,10 @@ const Resource = {
       return result;
     }
 
-    return this.generateDoc(result);
+    return this.generateDoc(result, encode);
   },
 
-  generateDoc({ body: content, response }) {
+  generateDoc({ body: content, response }, encode = false) {
     const { 'content-type': contentType = '' } = response.headers;
 
     // TODO: Implement is_text function from
@@ -48,7 +48,13 @@ const Resource = {
       throw new Error('Content does not appear to be text.');
     }
 
-    let $ = this.encodeDoc({ content, contentType });
+    let $;
+
+    if (encode) {
+      $ = this.encodeDoc({ content, contentType });
+    } else {
+      $ = cheerio.load(content, { decodeEntities: false });
+    }
 
     if ($.root().children().length === 0) {
       throw new Error('No children, likely a bad parse.');

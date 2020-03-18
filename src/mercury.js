@@ -18,6 +18,7 @@ const Mercury = {
       headers = {},
       extend,
       customExtractor,
+      encode = false,
     } = opts;
 
     // if no url was passed and this is the browser version,
@@ -38,7 +39,7 @@ const Mercury = {
       };
     }
 
-    const $ = await Resource.create(url, html, parsedUrl, headers);
+    const $ = await Resource.create(url, html, parsedUrl, headers, encode);
 
     // If we found an error creating the resource, return that error
     if ($.failed) {
